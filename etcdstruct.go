@@ -64,24 +64,24 @@ func decodeToken(encoded []byte, into interface{}) error {
 	return decoder.Decode(into)
 }
 
-func RetrieveEtcdStruct(ctx context.Context, etcdClient *etcd.Client, etcdKey string, retrieveInto EtcdStruct) error {
+func RetrieveEtcdStruct(ctx context.Context, etcdClient *etcd.Client, etcdKey string, retrieveInto EtcdStruct) (bool, error) {
 	resp, err := etcdClient.Get(ctx, etcdKey)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	/* No token with that name exists. */
 	if len(resp.Kvs) == 0 {
-		return nil
+		return false, nil
 	}
 
 	err = decodeToken(resp.Kvs[0].Value, retrieveInto)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	retrieveInto.SetRetrievedRevision(resp.Kvs[0].ModRevision)
-	return nil
+	return true, nil
 }
 
 func RetrieveEtcdStructs(ctx context.Context, etcdClient *etcd.Client, tofill func(key []byte) EtcdStruct, seterror func(es EtcdStruct, key []byte), etcdKey string, opts ...etcd.OpOption) error {
